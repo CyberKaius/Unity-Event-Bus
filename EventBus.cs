@@ -2,47 +2,89 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 
-public class EventBus
+public interface IEvent {}
+
+public class EventBus<TBaseEvent>
 {
-    private Dictionary<object, List<EventHandler>> subscribers;
+    private Dictionary<Type, object> listenerClasses = new Dictionary<Type, object>();
 
-    public delegate void EventHandler();
+    public delegate void EventHandler<T>(T eventData) where T : TBaseEvent;
 
-    public EventBus()
+    public void Subscribe<T>(EventHandler<T> handler) where T : TBaseEvent
     {
-        subscribers = new Dictionary<object, List<EventHandler>>();
+        GetListenerClass<T>().AddListener(handler);
     }
 
-    public void Subscribe<T>(EventHandler listener) where T : class
+    public void Unsubscribe<T>(EventHandler<T> handler) where T : TBaseEvent
     {
-        var type = typeof(T);
-
-        if (!subscribers.ContainsKey(type))
-            subscribers.Add(type, new List<EventHandler>());
-
-        subscribers[type].Add(listener);
+        GetListenerClass<T>().RemoveListener(handler);
     }
 
-    public void Unsubscribe<T>(EventHandler listener) where T : class
+    public void Publish<T>(T data) where T : TBaseEvent
     {
-        var type = typeof(T);
+        List<EventHandler<T>> handlers = new List<EventHandler<T>>();
 
-        if (!subscribers.ContainsKey(type))
-            return;
+        foreach (var listener in GetListenerClass<T>().RetrieveListeners())
+        {
+            handlers.Add(listener.Handler);
+        }
 
-        subscribers[type].Remove(listener);     
+        foreach (var handler in handlers)
+        {
+            handler(data);
+        }
     }
 
-    public void Publish<T>() where T : class
+    private ListenerClass<T> GetListenerClass<T>() where T : TBaseEvent
     {
-        var type = typeof(T);
-
-        if (!subscribers.ContainsKey(type))
-            return;
-
-        var listeners = subscribers[type];
- 
-        foreach(var value in listeners)
-            value();
+        Type type = typeof(T);
+        if (!listenerClasses.TryGetValue(type, out object obj))
+        {
+            ListenerClass<T> listenerClass = new ListenerClass<T>();
+            listenerClasses.Add(type, listenerClass);
+            return listenerClass;
+        }
+        return (ListenerClass<T>)obj;
     }
+    
+    private class ListenerClass <T> where T : TBaseEvent
+    {
+        public struct Listener 
+        {
+            public EventHandler<T> Handler;
+            
+            public Listener(EventHandler<T> handler)
+            {
+                Handler = handler;
+            }
+        } 
+
+        private List<Listener> listeners = new List<Listener>();
+
+        public void AddListener(EventHandler<T> handler)
+        {
+            foreach (var i in listeners)
+            {
+                if (i.Handler == handler)
+                    return;
+            }
+
+            Listener listener = new Listener(handler);
+            listeners.Add(listener);        
+        }
+
+        public void RemoveListener(EventHandler<T> handler)
+        {
+            for (int i = 0; i < listeners.Count; i++)
+            {
+                if (listeners[i].Handler == handler)
+                    listeners.Remove(listeners[i]);    
+            }
+        }
+
+        public List<Listener> RetrieveListeners()
+        {
+            return listeners;
+        }
+    }    
 }
