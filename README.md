@@ -1,5 +1,5 @@
 # Unity-Event-Bus
-An event manager that allows for decoupled clean code in Unity.
+An event manager that allows for decoupled communication in Unity.
 
 ## Methods
 Insantiate Event Bus
