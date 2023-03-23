@@ -14,7 +14,7 @@ EventBus.Publish<EventClass>(new EventClass());
 
 Publish (With arguments)
 ```c#
-EventBus.Publish<EventClass>(new EventClass());
+EventBus.Publish<EventClass>(new EventClass { name = "Jack", age = 25 });
 ```
 
 Subscribe
