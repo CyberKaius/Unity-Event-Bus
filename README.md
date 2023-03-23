@@ -7,6 +7,20 @@ Insantiate Event Bus
 EventBus<IEvent> eventBus = new EventBus<IEvent>();
 ```
 
+Create Event Class
+```c#
+public class EventClass : IEvent {}
+```
+
+Create Event Class With Arguments
+```c#
+public class EventClass : IEvent {
+    public string name { get; set; };
+    public int num { get; set; };
+}
+
+```
+
 Publish (No arguments)
 ```c#
 EventBus.Publish<EventClass>(new EventClass());
